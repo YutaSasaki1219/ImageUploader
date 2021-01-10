@@ -1,0 +1,38 @@
+services:
+  node:
+    build:
+      context: node
+      dockerfile: Dockerfile
+    volumes:
+      - ./node/image-uploader:/usr/src/app/image-uploader/
+      - /usr/src/app/image-uploader/node_modules # use data volume to separate node_modules directory between hostOS and guestOS
+    command: sh -c "cd image-uploader && npm install && yarn start"
+    ports:
+      - "3000:3000"
+    networks:
+      - image-uploader-network
+    container_name: node
+    depends_on:
+      - api
+  api:
+    build:
+      context: api
+      dockerfile: Dockerfile
+    volumes:
+      - ./api/image-uploader-api/:/app/image-uploader-api/
+    command: bash -c "cd image-uploader-api && flask run --host=0.0.0.0"
+    ports:
+      - "5000:5000"
+    expose:
+      - 5000
+    networks:
+      - image-uploader-network
+    environment: 
+      - FLASK_APP=app.py
+      - FLASK_ENV=development
+      - LC_ALL=C.UTF-8
+      - LANG=C.UTF-8
+      - PYTHONDONTWRITEBYTECODE=1
+    container_name: api
+networks:
+  image-uploader-network:
